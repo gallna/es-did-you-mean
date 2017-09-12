@@ -1,0 +1,46 @@
+elasticsearch-master:
+  image: gallna/elasticsearch
+  ports:
+    - "9200:9200"
+    - "9300:9300"
+  expose:
+    - 9200
+    - 9300
+  # command:  elasticsearch -Des.cluster.name=${CLUSTER_NAME} -Des.node.data=false -Des.node.master=true -Des.multicast.enabled=true
+  environment:
+    CLUSTER_NAME: "abc"
+    MULTICAST_ENABLED: "true"
+    NETWORK_HOST: _non_loopback:ipv4_
+    PUBLISH_HOST: _ec2:privateIp_
+    BIND_HOST: _non_loopback:ipv4_
+    MULTICAST_ENABLED: "true"
+    MULTICAST_TIMEOUT: 30s
+
+elasticsearch:
+  image: gallna/elasticsearch
+  # command:  elasticsearch -Des.cluster.name=${CLUSTER_NAME} -Des.multicast.enabled=false -Des.discovery.zen.ping.unicast.hosts=elasticmaster -Des.discovery.zen.minimum_master_nodes=1 -Des.network.host=${NETWORK_HOST} -Des.node.data=true -Des.node.master=false
+  expose:
+    - 9200
+    - 9300
+  links:
+    - elasticsearch-master:elasticmaster
+  environment:
+    CLUSTER_NAME: "abc"
+    NETWORK_HOST: _non_loopback:ipv4_
+
+php:
+  image: php:7
+  ports:
+  - 8080:8080
+  working_dir: /elasticsearch
+  volumes:
+  - ./:/elasticsearch
+  command: /elasticsearch/run.sh
+  links:
+  - elasticsearch-master:elasticsearch
+  environment:
+    ES_HOST: elasticsearch
+    ES_PORT: 9200
+    ES_INDEX: company
+    ES_TYPE: ok
+    ES_COUNT: 1000

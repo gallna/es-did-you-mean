@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>jQuery UI Autocomplete - Categories</title>
+  <link rel="stylesheet" href="/js/jquery-ui.css">
+  <script src="/js/jquery.js"></script>
+  <script src="/js/jquery-ui.js"></script>
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+  <style>
+  .ui-autocomplete-category {
+    font-weight: bold;
+    padding: .2em .4em;
+    margin: .8em 0 .2em;
+    line-height: 1.5;
+  }
+  .did-you-mean ul {
+    list-style-type: disc;
+  }
+  .center-blockk {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  </style>
+  <script>
+  $.widget( "custom.catcomplete", $.ui.autocomplete, {
+    _create: function() {
+      this._super();
+      this.widget().menu( "option", "items", "> :not(.ui-autocomplete-category)" );
+    },
+    _renderMenu: function( ul, items ) {
+      var that = this,
+        currentCategory = "";
+      $.each( items, function( index, item ) {
+        var li;
+        if ( item.category != currentCategory ) {
+          ul.append( "<li class='ui-autocomplete-category'>" + item.category + "</li>" );
+          currentCategory = item.category;
+        }
+        li = that._renderItemData( ul, item );
+        if ( item.category ) {
+          li.attr( "aria-label", item.category + " : " + item.label );
+        }
+      });
+    }
+  });
+  </script>
+  <script>
+
+  function didYouMean(term) {
+    $("#results").html("didYouMean: "+term);
+    $.ajax("didYouMean.php?term="+term, {
+      success: function(items) {
+        console.log(items);
+        $.each( items, function( index, item ) {
+            $('#results').append( "<li class='ui-autocomplete-category'>" + item.label + "</li>" );
+        });
+      },
+      error: function(data) {
+        console.log(data);
+      }
+    });
+  }
+
+  function search(term) {
+    $("#results").html("");
+    $("#suggestions").html("");
+    $("#search-term").html("search term: <b>"+term+"</b>");
+    $.ajax("search.php?term="+term, {
+      success: function(items) {
+        console.log(items);
+        if (items.suggestions.length) {
+          $('#suggestions').append( "<li><b>Did you mean: </b></li>" );
+        }
+        $.each( items.suggestions, function( index, item ) {
+            $('#suggestions').append( "<li>" + item + "</li>" );
+        });
+
+        $.each( items.hits, function( index, item ) {
+            $('#results').append( "<li>" + item + "</li>" );
+        });
+      },
+      error: function(data) {
+        console.log(data);
+      }
+    });
+  }
+
+  $(function() {
+    $( "#search" ).catcomplete({
+      delay: 0,
+      source: "autocomplete.php",
+    }).keyup(function(event){
+      if(event.keyCode == 13){
+          search($("#search").val());
+      }
+    });
+  });
+  </script>
+</head>
+<body>
+<div>
+<input class="form-control" id="search"  placeholder="Search">
+</div>
+<div class="row">
+  <div class="center-block col-md-4">
+    <div class="search-term">
+      <span id="search-term"></span>
+    </div>
+  </div>
+</div>
+<div class="row">
+    <div class="center-block col-md-4">
+        <div class="did-you-mean">
+            <ul class="text-center list-inline" id="suggestions"></ul>
+        </div>
+    </div>
+</div>
+  <div class="row">
+    <div class="center-block col-md-4">
+        <div class="hits">
+            <ol class="text-center" id="results"></ol>
+        </div>
+    </div>
+</div>
+</body>
+</html>
